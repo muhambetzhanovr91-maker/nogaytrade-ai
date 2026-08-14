@@ -1,0 +1,50 @@
+
+<!doctype html><html lang="kk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOĞAYTRADE AI</title>
+<style>
+body{margin:0;background:#080d18;color:#eef3ff;font-family:Arial,sans-serif}.wrap{max-width:1050px;margin:auto;padding:24px 16px}
+.brand{font-size:27px;font-weight:900;margin-bottom:20px}.hero,.card{background:#101827;border:1px solid #24324a;border-radius:18px;padding:20px}.hero h1{margin:0 0 8px}.muted{color:#91a0b8}
+.search{display:flex;gap:9px;margin-top:18px}.search input{flex:1;background:#080d18;border:1px solid #3a4a66;border-radius:12px;color:white;padding:14px;font-size:17px;text-transform:uppercase}.search button{border:0;border-radius:12px;background:#36e58a;font-weight:900;padding:0 22px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.card small{color:#91a0b8}.big{font-size:27px;font-weight:900;margin-top:7px}.green{color:#36e58a}.yellow{color:#f5c451}.red{color:#ff647c}
+.panel{background:#101827;border:1px solid #24324a;border-radius:18px;padding:18px;margin-top:14px}.panel h2{font-size:17px;margin:0 0 13px}
+table{width:100%;border-collapse:collapse}td{padding:9px 0;border-bottom:1px solid #1e2a3d}td:last-child{text-align:right;font-weight:700}.news article{padding:11px;background:#0a1120;border-radius:10px;margin:8px 0}.news a{color:#36e58a;text-decoration:none}
+@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.search{flex-direction:column}.search button{height:48px}}
+</style></head><body><div class="wrap">
+<div class="brand">NOĞAYTRADE AI</div>
+<div class="hero"><h1>AI Swing Trader</h1><div class="muted">Нақты баға мен жаңалықтарды тексеретін алғашқы live MVP.</div>
+<div class="search"><input id="s" value="RKLB"><button onclick="go()">ТАЛДАУ</button></div></div>
+<div id="out"></div>
+</div>
+<script>
+function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+async function go(){
+ const s=document.getElementById('s').value.trim().toUpperCase(); if(!s)return;
+ document.getElementById('out').innerHTML='<div class="panel">Жүктелуде...</div>';
+ const r=await fetch('/api/analyze?symbol='+encodeURIComponent(s)); const d=await r.json();
+ if(d.error){document.getElementById('out').innerHTML='<div class="panel red">'+esc(d.error)+'</div>';return}
+ const t=d.technical||{};
+ document.getElementById('out').innerHTML=`
+ <div class="grid">
+ <div class="card"><small>Баға</small><div class="big">$${Number(d.price).toFixed(2)}</div></div>
+ <div class="card"><small>24 сағ.</small><div class="big ${d.change_pct>=0?'green':'red'}">${Number(d.change_pct||0).toFixed(2)}%</div></div>
+ <div class="card"><small>SWING SCORE</small><div class="big green">${d.score}/100</div></div>
+ <div class="card"><small>СИГНАЛ</small><div class="big ${d.signal==='BUY'?'green':d.signal==='SELL'?'red':'yellow'}">${d.signal}</div></div>
+ </div>
+ <div class="panel"><h2>📊 Техникалық анализ</h2><table>
+ <tr><td>RSI</td><td>${t.available?(t.rsi??'—'):'—'}</td></tr>
+ <tr><td>EMA 20</td><td>${t.available?(t.ema20??'—'):'—'}</td></tr>
+ <tr><td>EMA 50</td><td>${t.available?(t.ema50??'—'):'—'}</td></tr>
+ <tr><td>EMA 200</td><td>${t.available?(t.ema200??'—'):'—'}</td></tr>
+ <tr><td>MACD</td><td>${t.available?(t.macd??'—'):'—'}</td></tr>
+ <tr><td>Volume ratio</td><td>${t.available?(t.volume_ratio??'—'):'—'}</td></tr>
+ </table>${!t.available?'<p class="muted">Техникалық тарих үшін Alpha Vantage кілтін .env файлына қосыңыз.</p>':''}</div>
+ <div class="panel"><h2>🏢 Компания</h2><table>
+ <tr><td>Атауы</td><td>${esc(d.name)}</td></tr><tr><td>Биржа</td><td>${esc(d.exchange)}</td></tr>
+ <tr><td>Market Cap</td><td>${d.market_cap?Number(d.market_cap).toLocaleString():'—'}</td></tr>
+ </table></div>
+ <div class="panel news"><h2>📰 Соңғы жаңалықтар</h2>
+ ${(d.news||[]).map(n=>`<article><b>${esc(n.headline)}</b><div class="muted">${esc(n.source)}</div>${n.url?`<a href="${esc(n.url)}" target="_blank">Дереккөзді ашу →</a>`:''}</article>`).join('')||'<div class="muted">Жаңалық жоқ.</div>'}</div>
+ <div class="panel"><div class="muted">Бұл MVP нақты деректерді көрсетуге арналған. BUY/SELL — автоматты сигнал, қаржылық кеңес емес.</div></div>`;
+}
+go();
+</script></body></html>
